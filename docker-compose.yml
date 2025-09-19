@@ -1,0 +1,32 @@
+version: '3.9'
+
+services:
+  fcg-api:
+    build: .
+    ports:
+      - "8080:80"
+    depends_on:
+      - sqlserver
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__connectionString=Server=sqlserver;Database=FCG;User Id=sa;Password=qwe123!@#;TrustServerCertificate=True
+    networks:
+      - fcg-network
+ 
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "qwe123!@#A"
+      ACCEPT_EULA: "Y"
+    volumes:
+      - sqlvolume:/var/opt/mssql
+    networks:
+      - fcg-network
+
+networks:
+  fcg-network:
+
+volumes:
+  sqlvolume:

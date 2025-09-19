@@ -1,0 +1,85 @@
+trigger:
+  - main
+
+pool:
+  vmImage: "windows-latest"
+ 
+variables:
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+  dotNetSdkVersion: '8.0.x'
+  solution: 'FCG_Docker.FCG.sln'
+  project: 'FCG/FCG.csproj'
+  testProject: 'TEST-FCG/TEST-FCG.csproj'
+
+steps:
+- task: UseDotNet@2
+  displayName: 'Instala o .NET SDK'
+  inputs:
+    packageType: 'sdk'
+    version: '$(dotNetSdkVersion)'
+    installationPath: $(Agent.ToolsDirectory)/dotnet
+
+- task: NuGetToolInstaller@1
+  displayName: 'Instala o NuGet'
+
+- task: NuGetCommand@2
+  displayName: 'Restaura os pacotes do NuGet'
+  inputs:
+    command: 'restore'
+    restoreSolution: '$(solution)'
+    feedsToUse: 'select'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Executa os testes'
+  inputs:
+    command: 'test'
+    projects: '$(testProject)'
+    arguments: '--configuration $(buildConfiguration)'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Build do projeto'
+  inputs:
+    command: 'build'
+    arguments: '--configuration $(buildConfiguration)'
+    projects: '$(project)'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Publica o projeto'
+  inputs:
+    command: 'publish'
+    publishWebProjects: false
+    projects: '$(project)'
+    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+    zipAfterPublish: false
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publica os artefatos do build'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'FCGTeste'
+    publishLocation: 'Container'
+
+- publish: '$(Build.ArtifactStagingDirectory)'
+  artifact: drop
+
+- download: current
+  artifact: drop
+
+- script:
+    echo O deploy em produção foi executado com sucesso!
+  displayName: 'Deploy em produção'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
